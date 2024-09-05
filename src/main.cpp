@@ -27,8 +27,12 @@ void setup()
 {
   // Serial.begin(115200);
   Serial.begin(230400);
-  dacRelayController1.setup();
-  dacRelayController2.setup();
+  if (dacRelayController1.setup()) {
+    dacRelayController1.setVoltage(0, true);
+  }
+  if (dacRelayController2.setup()) {
+    dacRelayController2.setVoltage(0, true);
+  }
 
   if (!mcp.begin(CAN_BAUDRATE))
   {

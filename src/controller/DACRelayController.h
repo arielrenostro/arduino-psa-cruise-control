@@ -21,6 +21,7 @@ public:
     DACRelayController(uint8_t addr, uint8_t inputPin, uint8_t ouputPin);
     bool setup();
     void onLoop();
+    void setVoltage(uint16_t value, bool save);
 };
 
 DACRelayController::DACRelayController(uint8_t addr, uint8_t inputPin, uint8_t ouputPin)
@@ -133,4 +134,9 @@ void DACRelayController::onLoop()
     }
     _lastInValue = _inValue;
     _lastOutValue = _outValue;
+}
+
+void DACRelayController::setVoltage(uint16_t value, bool save)
+{
+    _dac.setVoltage(value, save);
 }
