@@ -32,8 +32,23 @@ DACRelayController::DACRelayController(uint8_t addr, uint8_t inputPin, uint8_t o
 
 bool DACRelayController::setup()
 {
+    Serial.print(F("DACRelay: "));
+    Serial.print(_addr);
+    Serial.print(F(" A"));
+    Serial.print(_inputPin);
+    Serial.print(F(" A"));
+    Serial.print(_outputPin);
+    Serial.println(F(" starting"));
+
     if (!_dac.begin(_addr))
     {
+        Serial.print(F("DACRelay: "));
+        Serial.print(_addr);
+        Serial.print(F(" A"));
+        Serial.print(_inputPin);
+        Serial.print(F(" A"));
+        Serial.print(_outputPin);
+        Serial.println(F(" start failed"));
         return false;
     }
 
@@ -80,6 +95,15 @@ void DACRelayController::onLoop()
         }
     }
 
+    if (_fix > 100)
+    {
+        _fix = 100;
+    }
+    else if (_fix < -100)
+    {
+        _fix = -100;
+    }
+
     if (_updateVoltage)
     {
         _mappedValue = map(_inValue, 0, 1023, 0, 4095) + _fix;
@@ -94,9 +118,10 @@ void DACRelayController::onLoop()
         _dac.setVoltage(_mappedValue, false);
     }
 
-    if (_lastInValue != _inValue)
+    if (_lastInValue != _inValue || true)
     {
-        Serial.print("V: ");
+        Serial.print(_inputPin);
+        Serial.print(" | V: ");
         Serial.print(_inValue);
         Serial.print(" | VD: ");
         Serial.print(_outValue);
@@ -104,7 +129,7 @@ void DACRelayController::onLoop()
         Serial.print(_diff);
         Serial.print(" | Fix: ");
         Serial.print(_fix);
-        Serial.print("\n");
+        Serial.print(" | ");
     }
     _lastInValue = _inValue;
     _lastOutValue = _outValue;
