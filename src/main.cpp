@@ -16,6 +16,11 @@
 #define CAN_BAUDRATE (250000)
 #define CAN_CS_PIN 10
 
+#define THROTTLE_PEDAL_T1_MIN 87  //analogic 0-1023
+#define THROTTLE_PEDAL_T1_MAX 810 //analogic 0-1023
+#define THROTTLE_PEDAL_T2_MIN 43  //analogic 0-1023
+#define THROTTLE_PEDAL_T2_MAX 405 //analogic 0-1023
+
 DACRelayController dacRelayController1(GAS_PEDAL_DAC_1, GAS_PEDAL_INPUT_1, GAS_PEDAL_OUTPUT_1);
 DACRelayController dacRelayController2(GAS_PEDAL_DAC_2, GAS_PEDAL_INPUT_2, GAS_PEDAL_OUTPUT_2);
 Adafruit_MCP2515 mcp(CAN_CS_PIN);
