@@ -22,6 +22,7 @@ public:
     bool setup();
     void onLoop();
     void setVoltage(uint16_t value, bool save);
+    int16_t getFix();
 };
 
 DACRelayController::DACRelayController(uint8_t addr, uint8_t inputPin, uint8_t ouputPin)
@@ -35,9 +36,9 @@ bool DACRelayController::setup()
 {
     Serial.print(F("DACRelay: "));
     Serial.print(_addr);
-    Serial.print(F(" A"));
+    Serial.print(F(" "));
     Serial.print(_inputPin);
-    Serial.print(F(" A"));
+    Serial.print(F(" "));
     Serial.print(_outputPin);
     Serial.println(F(" starting"));
 
@@ -45,20 +46,21 @@ bool DACRelayController::setup()
     {
         Serial.print(F("DACRelay: "));
         Serial.print(_addr);
-        Serial.print(F(" A"));
+        Serial.print(F(" "));
         Serial.print(_inputPin);
-        Serial.print(F(" A"));
+        Serial.print(F(" "));
         Serial.print(_outputPin);
         Serial.println(F(" start failed"));
         return false;
     }
 
-    pinMode(_inputPin, INPUT_PULLUP);
-    pinMode(_outValue, INPUT_PULLUP);
+    pinMode(_inputPin, INPUT);
+    pinMode(_outputPin, INPUT);
     _inValue = analogRead(_inputPin);
-    _outValue = analogRead(_outValue);
+    _outValue = analogRead(_outputPin);
     _lastInValue = _inValue;
     _lastOutValue = _outValue;
+    return true;
 }
 
 void DACRelayController::onLoop()
@@ -139,4 +141,9 @@ void DACRelayController::onLoop()
 void DACRelayController::setVoltage(uint16_t value, bool save)
 {
     _dac.setVoltage(value, save);
+}
+
+int16_t DACRelayController::getFix()
+{
+    return _fix;
 }
