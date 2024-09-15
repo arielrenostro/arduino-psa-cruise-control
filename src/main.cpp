@@ -55,14 +55,6 @@ void setup()
   {
     dacRelayController2.setVoltage(0, true);
   }
-
-  // if (!mcp.begin(CAN_BAUDRATE))
-  // {
-  //   Serial.println("Error initializing MCP2515.");
-  //   while (1)
-  //     delay(10);
-  // }
-  // Serial.println("MCP2515 chip found");
 }
 
 unsigned long x = 0;

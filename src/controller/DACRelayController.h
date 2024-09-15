@@ -42,6 +42,9 @@ bool DACRelayController::setup()
     Serial.print(_outputPin);
     Serial.println(F(" starting"));
 
+    pinMode(_inputPin, INPUT_PULLUP);
+    pinMode(_outputPin, INPUT);
+
     if (!_dac.begin(_addr))
     {
         Serial.print(F("DACRelay: "));
@@ -53,9 +56,6 @@ bool DACRelayController::setup()
         Serial.println(F(" start failed"));
         return false;
     }
-
-    pinMode(_inputPin, INPUT);
-    pinMode(_outputPin, INPUT);
     _inValue = analogRead(_inputPin);
     _outValue = analogRead(_outputPin);
     _lastInValue = _inValue;
