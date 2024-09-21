@@ -9,8 +9,9 @@ CruiseController::CruiseController(ThrottleController *throttleController, Buzze
     double Ki = 10; // Initial Integral Gain
     double Kd = 0;  // Initial Differential Gain
 
-    PID pid(&_actualSpeed, &_outputPid, &_desiredSpeed, Kp, Ki, Kd, DIRECT);
+    PID pid(&_pidInput, &_pidOutput, &_pidSetPoint, Kp, Ki, Kd, DIRECT);
     _pid = &pid;
+    _pid->SetOutputLimits(POSITION_MIN, POSITION_MAX);
 }
 
 void CruiseController::onLoop()
@@ -21,7 +22,8 @@ void CruiseController::onLoop()
         return;
     }
 
-    unsigned long lastSpeedRef = millis(); // TODO: get it from K-LINE Controller
+    _readSpeed();
+    unsigned long lastSpeedRef = millis(); // TODO: get it from K-LINE controller
     if (millis() - lastSpeedRef > TIME_UNTIL_DISABLE_BY_SLOW_K_LINE_RESPONSE)
     {
         _buzzerController->playDisabledBySlowKLine();
@@ -70,6 +72,8 @@ void CruiseController::addSpeed(uint8_t speed)
     {
         _desiredSpeed = MAX_SPEED;
     }
+
+    _pidSetPoint = _desiredSpeed;
 }
 
 void CruiseController::subSpeed(uint8_t speed)
@@ -87,6 +91,8 @@ void CruiseController::subSpeed(uint8_t speed)
     {
         _desiredSpeed = MIN_SPEED;
     }
+
+    _pidSetPoint = _desiredSpeed;
 }
 
 void CruiseController::disable()
@@ -101,10 +107,8 @@ void CruiseController::enable()
 
 void CruiseController::_onLimitLoop()
 {
-    uint8_t speed = 0; // TODO -> Get speed from K-LINE
-
     // handle the overspeed buzzer
-    if (speed > _desiredSpeed && speed - _desiredSpeed > OVERSPEED_TO_BUZZER)
+    if (_actualSpeed > _desiredSpeed && _actualSpeed - _desiredSpeed > OVERSPEED_TO_BUZZER)
     {
         _buzzerController->playOverspeed();
     }
@@ -114,7 +118,7 @@ void CruiseController::_onLimitLoop()
     {
         _replayThrottle();
 
-        if (speed <= _desiredSpeed)
+        if (_actualSpeed <= _desiredSpeed)
         {
             if (_removeTempDisabledTime == 0)
             {
@@ -136,7 +140,7 @@ void CruiseController::_onLimitLoop()
         return;
     }
 
-    if (speed > _desiredSpeed) // overspeed
+    if (_actualSpeed > _desiredSpeed) // overspeed
     {
         uint16_t rposition = _throttleController->readPosition();
         uint16_t wposition = _throttleController->getWrotePosition();
@@ -159,18 +163,23 @@ void CruiseController::_onLimitLoop()
 
 void CruiseController::_onCruiseLoop()
 {
-    uint8_t speed = 0; // TODO -> Get speed from K-LINE
-
     // handle the overspeed buzzer
-    if (speed > _desiredSpeed && speed - _desiredSpeed > OVERSPEED_TO_BUZZER)
+    if (_actualSpeed > _desiredSpeed && _actualSpeed - _desiredSpeed > OVERSPEED_TO_BUZZER)
     {
         _buzzerController->playOverspeed();
     }
 
     _pid->Compute();
+    _throttleController->writePosition(_pidOutput);
 }
 
 void CruiseController::_replayThrottle()
 {
     _throttleController->writePosition(_throttleController->readPosition());
+}
+
+void CruiseController::_readSpeed()
+{
+    _actualSpeed = 0; // TODO: Get it from KLINE
+    _pidInput = _actualSpeed;
 }

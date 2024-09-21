@@ -31,14 +31,18 @@ private:
     bool _temporaryDisabled = false;
     unsigned long _removeTempDisabledTime = 0;
 
+    uint8_t _actualSpeed = 0;
+    uint8_t _desiredSpeed = 0;
+
     PID *_pid;
-    double _actualSpeed = 0;
-    double _desiredSpeed = 40;
-    double _outputPid = 0;
+    double _pidInput = 0;
+    double _pidSetPoint = 40;
+    double _pidOutput = 0;
 
     void _onCruiseLoop();
     void _onLimitLoop();
     void _replayThrottle();
+    void _readSpeed();
 
 public:
     CruiseController(ThrottleController *throttleController, BuzzerController *buzzerController);
