@@ -4,7 +4,10 @@
 
 #include "components/Display.h"
 #include "components/DAC.h"
+#include "components/Button.h"
 #include "controller/AppController.h"
+#include "controller/CruiseController.h"
+#include "controller/ThrottleController.h"
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET -1    // Reset pin # (or -1 if sharing Arduino reset pin)
@@ -21,53 +24,155 @@
 #define THROTTLE_PEDAL_INPUT_2 A1
 #define THROTTLE_PEDAL_OUTPUT_2 A2
 
-#define THROTTLE_PEDAL_T1_MIN 87  // analogic 0-1023
-#define THROTTLE_PEDAL_T1_MAX 810 // analogic 0-1023
-#define THROTTLE_PEDAL_T2_MIN 43  // analogic 0-1023
-#define THROTTLE_PEDAL_T2_MAX 405 // analogic 0-1023
+// Buttons
+#define CHANGE_MODE_BUTTON_PIN 3
+#define UP_BUTTON_PIN 4
+#define DOWN_BUTTON_PIN 5
+#define OK_BUTTON_PIN 6
+#define CANCEL_BUTTON_PIN 7
+#define CLUTCH_PEDAL_BUTTON_PIN 8
+#define BREAK_PEDAL_BUTTON_PIN 9
+
+// Behaviours
+#define SPEED_STEP 1
+#define SPEED_HOLDING_STEP 5
 
 // Components
 Display display(SCREEN_ADDR, SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-// Controllers
 DAC dac1(THROTTLE_PEDAL_DAC_1, THROTTLE_PEDAL_OUTPUT_1);
 DAC dac2(THROTTLE_PEDAL_DAC_2, THROTTLE_PEDAL_OUTPUT_2);
+Button changeModeBt(CHANGE_MODE_BUTTON_PIN);
+Button upBt(UP_BUTTON_PIN);
+Button downBt(DOWN_BUTTON_PIN);
+Button okBt(OK_BUTTON_PIN);
+Button cancelBt(CANCEL_BUTTON_PIN);
+Button clutchBt(CLUTCH_PEDAL_BUTTON_PIN);
+Button breakBt(BREAK_PEDAL_BUTTON_PIN);
+
+// Controllers
+ThrottleController throttleController(&dac1, &dac2);
+CruiseController cruiseController(&throttleController);
 
 // Utils
+ButtonPressEvent btEvent = nothing;
 unsigned long lastTime;
+
+// functions
+void buttonsLoop();
+void dacLoop();
+void debugLoop();
 
 void setup()
 {
   Serial.begin(115200);
   Serial.setTimeout(1);
 
-  if (display.setup())
+  if (!display.setup())
   {
-    display.setCursor(0, 16);
+    Serial.println("FAILURE TO START DISPLAY.");
+    while (true)
+      delay(1);
+  }
+
+  if (!dac1.setup() || !dac2.setup())
+  {
+    display.clearDisplay();
+
+    display.setTextSize(2);
+    display.setCursor(0, 0);
+    display.println(F("! FAILED !"));
+
     display.setTextSize(3);
-    display.setTextColor(WHITE);
-    display.println(F("80km"));
+    display.setCursor(26, 26);
+    display.println(F("DAC"));
+
     display.display();
+
+    while (true)
+      delay(1);
   }
-  if (dac1.setup())
-  {
-    dac1.setDesiredValue(0, true);
-  }
-  if (dac2.setup())
-  {
-    dac2.setDesiredValue(0, true);
-  }
+
+  changeModeBt.setup();
+  upBt.setup();
+  downBt.setup();
+  okBt.setup();
+  cancelBt.setup();
+  clutchBt.setup();
+  breakBt.setup();
+
+  dac1.setDesiredValue(0, true);
+  dac2.setDesiredValue(0, true);
 }
 
 void loop()
 {
   AppController::onLoop();
+  buttonsLoop();
+  cruiseController.onLoop();
+  dacLoop();
+  debugLoop();
 
-  
+  delay(1000);
+}
 
-  dac1.onLoop();
-  dac2.onLoop();
+void buttonsLoop()
+{
+  btEvent = changeModeBt.onLoop();
+  if (btEvent == holding || btEvent == push)
+  {
+    cruiseController.changeMode();
+  }
 
+  btEvent = upBt.onLoop();
+  if (btEvent == holding)
+  {
+    cruiseController.addSpeed(SPEED_HOLDING_STEP);
+  }
+  else if (btEvent == push)
+  {
+    cruiseController.addSpeed(SPEED_STEP);
+  }
+
+  btEvent = downBt.onLoop();
+  if (btEvent == holding)
+  {
+    cruiseController.subSpeed(SPEED_HOLDING_STEP);
+  }
+  else if (btEvent == push)
+  {
+    cruiseController.subSpeed(SPEED_STEP);
+  }
+
+  btEvent = cancelBt.onLoop();
+  if (btEvent == push)
+  {
+    cruiseController.disable();
+    return;
+  }
+
+  btEvent = clutchBt.onLoop();
+  if (btEvent == push || btEvent == holding)
+  {
+    cruiseController.disable();
+    return;
+  }
+
+  btEvent = breakBt.onLoop();
+  if (btEvent == push || btEvent == holding)
+  {
+    cruiseController.disable();
+    return;
+  }
+
+  btEvent = okBt.onLoop();
+  if (btEvent == push)
+  {
+    cruiseController.enable();
+  }
+}
+
+void debugLoop()
+{
   if (AppController::isDebug())
   {
     Serial.print(F("DAC1 DV:"));
@@ -90,6 +195,10 @@ void loop()
 
     lastTime = millis();
   }
+}
 
-  delay(1000);
+void dacLoop()
+{
+  dac1.onLoop();
+  dac2.onLoop();
 }

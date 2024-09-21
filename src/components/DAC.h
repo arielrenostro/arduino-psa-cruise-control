@@ -1,3 +1,6 @@
+#ifndef DAC_C
+#define DAC_C
+
 #include <Arduino.h>
 #include <Adafruit_MCP4725.h>
 
@@ -27,3 +30,5 @@ public:
     uint16_t getDesiredValue();
     void setDesiredValue(uint16_t value, bool save);
 };
+
+#endif

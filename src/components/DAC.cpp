@@ -67,7 +67,7 @@ uint16_t DAC::getDesiredValue()
 
 void DAC::setDesiredValue(uint16_t value, bool save)
 {
-    if (value < 0 || value > 1023 || _desiredValue == value)
+    if (value > 1023 || _desiredValue == value)
         return;
 
     _dac.setVoltage(_mapAnalogToDac(value), save);
