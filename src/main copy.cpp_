@@ -3,7 +3,7 @@
 #include <AltSoftSerial.h>
 
 // #include "components/Display.h"
-// #include "controller/DACRelayController.h"
+// #include "controllers/DACRelayController.h"
 #include "./pids.h"
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)

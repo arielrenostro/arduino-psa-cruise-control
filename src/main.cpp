@@ -5,9 +5,9 @@
 #include "components/Display.h"
 #include "components/DAC.h"
 #include "components/Button.h"
-#include "controller/AppController.h"
-#include "controller/CruiseController.h"
-#include "controller/ThrottleController.h"
+#include "controllers/AppController.h"
+#include "controllers/CruiseController.h"
+#include "controllers/ThrottleController.h"
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET -1    // Reset pin # (or -1 if sharing Arduino reset pin)
@@ -50,8 +50,9 @@ Button clutchBt(CLUTCH_PEDAL_BUTTON_PIN);
 Button breakBt(BREAK_PEDAL_BUTTON_PIN);
 
 // Controllers
-ThrottleController throttleController(&dac1, &dac2);
-CruiseController cruiseController(&throttleController);
+ThrottleController throttleController(&dac1, &dac2, THROTTLE_PEDAL_INPUT_1, THROTTLE_PEDAL_INPUT_2);
+BuzzerController buzzerController;
+CruiseController cruiseController(&throttleController, &buzzerController);
 
 // Utils
 ButtonPressEvent btEvent = nothing;
@@ -66,6 +67,8 @@ void setup()
 {
   Serial.begin(115200);
   Serial.setTimeout(1);
+
+  AppController::setDebug(true); // remove it in final compile
 
   if (!display.setup())
   {
@@ -92,6 +95,7 @@ void setup()
       delay(1);
   }
 
+  throttleController.setup();
   changeModeBt.setup();
   upBt.setup();
   downBt.setup();
@@ -112,7 +116,7 @@ void loop()
   dacLoop();
   debugLoop();
 
-  delay(1000);
+  delay(350);
 }
 
 void buttonsLoop()
@@ -181,6 +185,7 @@ void debugLoop()
     Serial.print(dac1.getValue());
     Serial.print(F(" F:"));
     Serial.print(dac1.getFix());
+    
     Serial.print(F(" | "));
     Serial.print(F("DAC2 DV:"));
     Serial.print(dac2.getDesiredValue());
@@ -188,9 +193,17 @@ void debugLoop()
     Serial.print(dac2.getValue());
     Serial.print(F(" F:"));
     Serial.print(dac2.getFix());
+    
     Serial.print(F(" | "));
-    Serial.print(F("T:"));
+    Serial.print(F("TC RP:"));
+    Serial.print(throttleController.readPosition());
+    Serial.print(F(" WP:"));
+    Serial.print(throttleController.getWrotePosition());
+
+    Serial.print(F(" | "));
+    Serial.print(F("T V:"));
     Serial.print(millis() - lastTime, 10);
+
     Serial.print(F("\n"));
 
     lastTime = millis();
