@@ -40,4 +40,4 @@ TODO: explain all controls to prevent acidents
 ![schematics](./docs/schematics.jpg)
 
 ### PCB design (for an one layer universal PCB)
-[!pbc](./docs/board-design.jpg)
+![pbc](./docs/board-design.jpg)
