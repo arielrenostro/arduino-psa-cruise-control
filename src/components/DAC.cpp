@@ -47,7 +47,7 @@ void DAC::onLoop()
 
     if (_diff != 0)
     {
-        _mappedValue = _mapAnalogToDac(_refValue) + _fix;
+        _mappedValue = _mapAnalogToDac(_desiredValue) + _fix; // TODO: TESTAR
         _mappedValue = max(min(_mappedValue, 4095), 0);
         _dac.setVoltage(_mappedValue, false);
     }

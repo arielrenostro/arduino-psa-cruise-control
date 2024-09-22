@@ -45,6 +45,12 @@ void CruiseController::onLoop()
     default:
         break;
     }
+
+    // handle the overspeed buzzer
+    if (_actualSpeed > _desiredSpeed && _actualSpeed - _desiredSpeed > OVERSPEED_TO_BUZZER)
+    {
+        _buzzerController->playOverspeed();
+    }
 }
 
 void CruiseController::changeMode()
@@ -107,12 +113,6 @@ void CruiseController::enable()
 
 void CruiseController::_onLimitLoop()
 {
-    // handle the overspeed buzzer
-    if (_actualSpeed > _desiredSpeed && _actualSpeed - _desiredSpeed > OVERSPEED_TO_BUZZER)
-    {
-        _buzzerController->playOverspeed();
-    }
-
     // handle temporary disabled
     if (_temporaryDisabled)
     {
@@ -140,7 +140,7 @@ void CruiseController::_onLimitLoop()
         return;
     }
 
-    if (_actualSpeed > _desiredSpeed) // overspeed
+    if (_actualSpeed >= _desiredSpeed) // overspeed
     {
         uint16_t rposition = _throttleController->readPosition();
         uint16_t wposition = _throttleController->getWrotePosition();
@@ -163,13 +163,7 @@ void CruiseController::_onLimitLoop()
 
 void CruiseController::_onCruiseLoop()
 {
-    // handle the overspeed buzzer
-    if (_actualSpeed > _desiredSpeed && _actualSpeed - _desiredSpeed > OVERSPEED_TO_BUZZER)
-    {
-        _buzzerController->playOverspeed();
-    }
-
-    _pid->Compute();
+    _pid->Compute(); // TODO: implement a delay because of the slow vehicle response.
     _throttleController->writePosition(_pidOutput);
 }
 

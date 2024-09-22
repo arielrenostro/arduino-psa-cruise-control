@@ -60,7 +60,6 @@ unsigned long lastTime;
 
 // functions
 void buttonsLoop();
-void dacLoop();
 void debugLoop();
 
 void setup()
@@ -113,7 +112,8 @@ void loop()
   AppController::onLoop();
   buttonsLoop();
   cruiseController.onLoop();
-  dacLoop();
+  dac1.onLoop();
+  dac2.onLoop();
   debugLoop();
 
   delay(350);
@@ -185,7 +185,7 @@ void debugLoop()
     Serial.print(dac1.getValue());
     Serial.print(F(" F:"));
     Serial.print(dac1.getFix());
-    
+
     Serial.print(F(" | "));
     Serial.print(F("DAC2 DV:"));
     Serial.print(dac2.getDesiredValue());
@@ -193,7 +193,7 @@ void debugLoop()
     Serial.print(dac2.getValue());
     Serial.print(F(" F:"));
     Serial.print(dac2.getFix());
-    
+
     Serial.print(F(" | "));
     Serial.print(F("TC RP:"));
     Serial.print(throttleController.readPosition());
@@ -208,10 +208,4 @@ void debugLoop()
 
     lastTime = millis();
   }
-}
-
-void dacLoop()
-{
-  dac1.onLoop();
-  dac2.onLoop();
 }
