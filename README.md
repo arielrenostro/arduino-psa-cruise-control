@@ -41,3 +41,6 @@ TODO: explain all controls to prevent acidents
 
 ### PCB design (for an one layer universal PCB)
 ![pbc](./docs/board-design.jpg)
+
+## Real project
+TODO: take real pictures of it.
