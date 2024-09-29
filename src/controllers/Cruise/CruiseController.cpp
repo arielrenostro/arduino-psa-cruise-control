@@ -1,9 +1,10 @@
 #include "CruiseController.h"
 
-CruiseController::CruiseController(ThrottleController *throttleController, BuzzerController *buzzerController)
+CruiseController::CruiseController(ThrottleController *throttleController, BuzzerController *buzzerController, KLineController *klineController)
 {
     _throttleController = throttleController;
     _buzzerController = buzzerController;
+    _klineController = klineController;
 
     double Kp = 0;  // Initial Proportional Gain
     double Ki = 10; // Initial Integral Gain
@@ -23,8 +24,8 @@ void CruiseController::onLoop()
     }
 
     _readSpeed();
-    unsigned long lastSpeedRef = millis(); // TODO: get it from K-LINE controller
-    if (millis() - lastSpeedRef > TIME_UNTIL_DISABLE_BY_SLOW_K_LINE_RESPONSE)
+
+    if (millis() - _actualSpeed.time > TIME_UNTIL_DISABLE_BY_SLOW_K_LINE_RESPONSE || !_klineController->isConnected())
     {
         _buzzerController->playDisabledBySlowKLine();
         disable();
@@ -47,7 +48,7 @@ void CruiseController::onLoop()
     }
 
     // handle the overspeed buzzer
-    if (_actualSpeed > _desiredSpeed && _actualSpeed - _desiredSpeed > OVERSPEED_TO_BUZZER)
+    if (_actualSpeed.speed > _desiredSpeed && _actualSpeed.speed - _desiredSpeed > OVERSPEED_TO_BUZZER)
     {
         _buzzerController->playOverspeed();
     }
@@ -118,7 +119,7 @@ void CruiseController::_onLimitLoop()
     {
         _replayThrottle();
 
-        if (_actualSpeed <= _desiredSpeed)
+        if (_actualSpeed.speed <= _desiredSpeed)
         {
             if (_removeTempDisabledTime == 0)
             {
@@ -140,7 +141,7 @@ void CruiseController::_onLimitLoop()
         return;
     }
 
-    if (_actualSpeed >= _desiredSpeed) // overspeed
+    if (_actualSpeed.speed >= _desiredSpeed) // overspeed
     {
         uint16_t rposition = _throttleController->readPosition();
         uint16_t wposition = _throttleController->getWrotePosition();
@@ -163,8 +164,12 @@ void CruiseController::_onLimitLoop()
 
 void CruiseController::_onCruiseLoop()
 {
-    _pid->Compute(); // TODO: implement a delay because of the slow vehicle response.
-    _throttleController->writePosition(_pidOutput);
+    if (millis() - _lastPidCalculation > TIME_DELAY_PID_CALCULATION)
+    {
+        _pid->Compute();
+        _lastPidCalculation = millis();
+        _throttleController->writePosition(_pidOutput);
+    }
 }
 
 void CruiseController::_replayThrottle()
@@ -174,6 +179,6 @@ void CruiseController::_replayThrottle()
 
 void CruiseController::_readSpeed()
 {
-    _actualSpeed = 0; // TODO: Get it from KLINE
-    _pidInput = _actualSpeed;
+    _actualSpeed = _klineController->getSpeed();
+    _pidInput = _actualSpeed.speed;
 }

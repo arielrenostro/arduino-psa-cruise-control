@@ -12,7 +12,8 @@ bool DAC::setup()
     Serial.print(_addr);
     Serial.print(F(" "));
     Serial.print(_refPin);
-    Serial.println(F(" starting"));
+    Serial.print(F(" "));
+    Serial.println(F("starting"));
 
     if (!_dac.begin(_addr))
     {
@@ -20,7 +21,8 @@ bool DAC::setup()
         Serial.print(_addr);
         Serial.print(F(" "));
         Serial.print(_refPin);
-        Serial.println(F(" start failed"));
+        Serial.print(F(" "));
+        Serial.println(F("start failed"));
         return false;
     }
 

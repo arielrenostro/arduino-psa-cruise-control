@@ -5,9 +5,10 @@
 #include "components/Display.h"
 #include "components/DAC.h"
 #include "components/Button.h"
-#include "controllers/AppController.h"
-#include "controllers/CruiseController.h"
-#include "controllers/ThrottleController.h"
+#include "controllers/App/AppController.h"
+#include "controllers/Cruise/CruiseController.h"
+#include "controllers/Throttle/ThrottleController.h"
+#include "controllers/KLine/KLineController.h"
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET -1    // Reset pin # (or -1 if sharing Arduino reset pin)
@@ -52,11 +53,13 @@ Button breakBt(BREAK_PEDAL_BUTTON_PIN);
 // Controllers
 ThrottleController throttleController(&dac1, &dac2, THROTTLE_PEDAL_INPUT_1, THROTTLE_PEDAL_INPUT_2);
 BuzzerController buzzerController;
-CruiseController cruiseController(&throttleController, &buzzerController);
+KLineController klineController;
+CruiseController cruiseController(&throttleController, &buzzerController, &klineController);
 
 // Utils
 ButtonPressEvent btEvent = nothing;
-unsigned long lastTime;
+unsigned long lastLoopTime;
+unsigned long lastDebugTime;
 
 // functions
 void buttonsLoop();
@@ -72,8 +75,8 @@ void setup()
   if (!display.setup())
   {
     Serial.println("FAILURE TO START DISPLAY.");
-    while (true)
-      delay(1);
+    // while (true)
+    //   delay(1);
   }
 
   if (!dac1.setup() || !dac2.setup())
@@ -96,6 +99,7 @@ void setup()
 
   throttleController.setup();
   changeModeBt.setup();
+  klineController.setup();
   upBt.setup();
   downBt.setup();
   okBt.setup();
@@ -111,12 +115,12 @@ void loop()
 {
   AppController::onLoop();
   buttonsLoop();
+  klineController.onLoop();
   cruiseController.onLoop();
   dac1.onLoop();
   dac2.onLoop();
   debugLoop();
-
-  delay(350);
+  lastLoopTime = millis();
 }
 
 void buttonsLoop()
@@ -177,7 +181,7 @@ void buttonsLoop()
 
 void debugLoop()
 {
-  if (AppController::isDebug())
+  if (AppController::isDebug() && millis() - lastDebugTime > 350)
   {
     Serial.print(F("DAC1 DV:"));
     Serial.print(dac1.getDesiredValue());
@@ -201,11 +205,19 @@ void debugLoop()
     Serial.print(throttleController.getWrotePosition());
 
     Serial.print(F(" | "));
+    Serial.print(F("KL C:"));
+    Serial.print(klineController.isConnected());
+    Serial.print(F(" S:"));
+    Serial.print(klineController.getSpeed().speed);
+    Serial.print(F(" T:"));
+    Serial.print((unsigned long) klineController.getSpeed().time);
+    
+    Serial.print(F(" | "));
     Serial.print(F("T V:"));
-    Serial.print(millis() - lastTime, 10);
+    Serial.print(millis() - lastLoopTime, 10);
 
     Serial.print(F("\n"));
 
-    lastTime = millis();
+    lastDebugTime = millis();
   }
 }

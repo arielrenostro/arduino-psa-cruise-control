@@ -2,7 +2,7 @@
 #define ThrottleController_C
 
 #include <Arduino.h>
-#include "../components/DAC.h"
+#include "../../components/DAC.h"
 
 #define TRACK_1_MIN 87  // analogic 0-1023
 #define TRACK_1_MAX 810 // analogic 0-1023

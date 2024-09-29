@@ -10,14 +10,19 @@ Display::Display(uint8_t addr, uint8_t width, uint8_t height, TwoWire *wire, int
 
 bool Display::setup()
 {
-  Serial.println(F("Display: Starting"));
+  Serial.print(F("Display: "));
+  Serial.println(F("starting"));
+
   if (_display.begin(SSD1306_SWITCHCAPVCC, _addr))
   {
-    Serial.println(F("Display: Started"));
+    Serial.print(F("Display: "));
+    Serial.println(F("started"));
     clearDisplay();
     return true;
   }
-  Serial.println(F("Display: Failed"));
+
+  Serial.print(F("Display: "));
+  Serial.println(F("failed"));
   return false;
 }
 
@@ -51,11 +56,13 @@ void Display::setCursor(int16_t x, int16_t y)
   _display.setCursor(x, y);
 }
 
-void Display::print(long v, int base) {
+void Display::print(long v, int base)
+{
   _display.print(v, base);
 }
 
-void Display::print(double n, int digits) {
+void Display::print(double n, int digits)
+{
   _display.print(n, digits);
 }
 
