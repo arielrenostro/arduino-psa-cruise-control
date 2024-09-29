@@ -27,7 +27,7 @@ void CruiseController::onLoop()
 
     if (millis() - _actualSpeed.time > TIME_UNTIL_DISABLE_BY_SLOW_K_LINE_RESPONSE || !_klineController->isConnected())
     {
-        _buzzerController->playDisabledBySlowKLine();
+        _buzzerController->fire(klineSlow);
         disable();
         _replayThrottle();
         return;
@@ -50,7 +50,7 @@ void CruiseController::onLoop()
     // handle the overspeed buzzer
     if (_actualSpeed.speed > _desiredSpeed && _actualSpeed.speed - _desiredSpeed > OVERSPEED_TO_BUZZER)
     {
-        _buzzerController->playOverspeed();
+        _buzzerController->fire(overspeed);
     }
 }
 
@@ -128,7 +128,7 @@ void CruiseController::_onLimitLoop()
 
             if (millis() - _removeTempDisabledTime >= TIME_UNTIL_REMOVE_TEMP_DISABLE)
             {
-                _buzzerController->playSpeedLimitEnabled();
+                _buzzerController->fire(speedLimitEnabled);
                 _removeTempDisabledTime = 0;
                 _temporaryDisabled = false;
             }
@@ -147,7 +147,7 @@ void CruiseController::_onLimitLoop()
         uint16_t wposition = _throttleController->getWrotePosition();
         if (rposition > wposition && rposition - wposition > THROTTLE_DIFF_LIMIT_TO_TEMP_DISABLE) // user's asked for throttle
         {
-            _buzzerController->playSpeedLimitDisabled();
+            _buzzerController->fire(speedLimitDisabled);
             _temporaryDisabled = true;
             _replayThrottle();
         }

@@ -34,6 +34,9 @@
 #define CLUTCH_PEDAL_BUTTON_PIN 8
 #define BREAK_PEDAL_BUTTON_PIN 9
 
+// Buzzer
+#define BUZZER_PIN 12
+
 // Behaviours
 #define SPEED_STEP 1
 #define SPEED_HOLDING_STEP 5
@@ -52,7 +55,7 @@ Button breakBt(BREAK_PEDAL_BUTTON_PIN);
 
 // Controllers
 ThrottleController throttleController(&dac1, &dac2, THROTTLE_PEDAL_INPUT_1, THROTTLE_PEDAL_INPUT_2);
-BuzzerController buzzerController;
+BuzzerController buzzerController(BUZZER_PIN);
 KLineController klineController;
 CruiseController cruiseController(&throttleController, &buzzerController, &klineController);
 
@@ -211,6 +214,10 @@ void debugLoop()
     Serial.print(klineController.getSpeed().speed);
     Serial.print(F(" T:"));
     Serial.print((unsigned long) klineController.getSpeed().time);
+
+    Serial.print(F(" | "));
+    Serial.print(F("B T:"));
+    Serial.print(buzzerController.getFiringAlert());
     
     Serial.print(F(" | "));
     Serial.print(F("T V:"));
