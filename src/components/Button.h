@@ -1,12 +1,11 @@
-#ifndef Button_C
-#define Button_C
+#ifndef BUTTON_C
+#define BUTTON_C
 
 #include <Arduino.h>
+#include "ButtonPressEvent.h"
 
 #define BUTTON_HOLD_DELAY 600
 #define BUTTON_HOLD_REPEAT_DELAY 300
-
-enum ButtonPressEvent { push, holding, nothing };
 
 class Button
 {
@@ -21,7 +20,7 @@ private:
 public:
   Button(uint8_t pin);
   bool setup();
-  ButtonPressEvent onLoop();
+  void onLoop(ButtonPressEvent* evt);
 };
 
 #endif

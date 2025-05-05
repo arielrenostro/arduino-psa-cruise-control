@@ -1,4 +1,5 @@
 #include "KLineController.h"
+#include "../App/AppController.h"
 
 KLineController::KLineController()
 {
@@ -44,7 +45,7 @@ void KLineController::onLoop()
         break;
 
     case idle:
-        _requestSpeed();
+        _handleIdle();
         break;
 
     default:
@@ -52,14 +53,25 @@ void KLineController::onLoop()
     }
 }
 
-SpeedData KLineController::getSpeed()
+DataEvent KLineController::getSpeed()
 {
     return _speedData;
+}
+
+DataEvent KLineController::getRpm()
+{
+    return _rpmData;
 }
 
 bool KLineController::isConnected()
 {
     return _connected;
+}
+
+void KLineController::clearRpm()
+{
+    _rpmData.time = 0;
+    _rpmData.value = 0;
 }
 
 void KLineController::_init()
@@ -107,6 +119,18 @@ void KLineController::_handleInitializing()
     }
 }
 
+void KLineController::_handleIdle()
+{
+    if (_speedData.time == 0 || millis() - _speedData.time > 1000)
+    {
+        _requestSpeed();
+    }
+    else
+    {
+        _requestRpm();
+    }
+}
+
 void KLineController::_handleWriting()
 {
     _serial.write(_wBuff[_wIdx]);
@@ -146,6 +170,7 @@ void KLineController::_handleReading()
         {
             _serial.flushInput(); // clear read buffer
             _processReadMessage();
+            _countConnectionTimeout = 0;
             return;
         }
     }
@@ -156,6 +181,12 @@ void KLineController::_handleReading()
         Serial.println(F("read timeout"));
         _serial.flushInput(); // clear read buffer
         _processReadMessage();
+
+        _countConnectionTimeout++;
+        if (_countConnectionTimeout % K_LINE_READ_TIMEOUT_LIMIT == 0)
+        {
+            _disconnect();
+        }
     }
 }
 
@@ -195,6 +226,7 @@ void KLineController::_handleStartCommunicationResponse()
         Serial.println(F("started"));
         _setState(idle, 0);
         _connected = true;
+        _countConnectionTimeout = 0;
     }
     else
     {
@@ -202,6 +234,7 @@ void KLineController::_handleStartCommunicationResponse()
         _dump(_rBuff, _rLen);
         Serial.print(F("\n"));
         _disconnect();
+        _countConnectionTimeout++;
     }
 }
 
@@ -209,9 +242,13 @@ void KLineController::_handleLiveDataResponse()
 {
     if (_rLen >= 12 && _rBuff[10] == ISO1430_FAST_VEHICLE_SPEED_PID) // vehicle speed response
     {
-        _speedData = SpeedData();
-        _speedData.speed = _rBuff[11];
+        _speedData.value = _rBuff[11];
         _speedData.time = millis();
+    }
+    else if (_rLen >= 13 && _rBuff[10] == ISO1430_FAST_VEHICLE_RPM_PID) // vehicle rpm response
+    {
+        _rpmData.value = (_rBuff[11] * 256 + _rBuff[12]) / 4;
+        _rpmData.time = millis();
     }
     else
     {
@@ -269,6 +306,11 @@ void KLineController::_requestSpeed()
     _setWriteData(ISO1430_FAST_LIVE_DATA_HEADER, sizeof(ISO1430_FAST_LIVE_DATA_HEADER), ISO1430_FAST_VEHICLE_SPEED_PID);
 }
 
+void KLineController::_requestRpm()
+{
+    _setWriteData(ISO1430_FAST_LIVE_DATA_HEADER, sizeof(ISO1430_FAST_LIVE_DATA_HEADER), ISO1430_FAST_VEHICLE_RPM_PID);
+}
+
 void KLineController::_dump(const byte data[], uint8_t length)
 {
     for (uint8_t i = 0; i < length; i++)
@@ -288,4 +330,9 @@ bool KLineController::_isSame(const byte b1[], const byte b2[], uint8_t length)
         }
     }
     return true;
+}
+
+uint8_t KLineController::getCountConnectionTimeout()
+{
+    return _countConnectionTimeout;
 }

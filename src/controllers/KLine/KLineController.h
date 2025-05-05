@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include <AltSoftSerial.h>
-#include "../App/AppController.h"
 
 #define K_LINE_RX 8
 #define K_LINE_TX 9
@@ -11,16 +10,18 @@
 #define K_LINE_READ_DELAY 5
 #define K_LINE_REQUEST_DELAY 50
 #define K_LINE_READ_TIMEOUT 1000
+#define K_LINE_READ_TIMEOUT_LIMIT 10
 
 #define ISO1430_FAST_INIT 0x81
 #define ISO1430_FAST_VEHICLE_SPEED_PID 0x0D
+#define ISO1430_FAST_VEHICLE_RPM_PID 0x0C
 
 const byte ISO1430_FAST_INIT_HEADER[3] = {0xC1, 0x33, 0xF1};
 const byte ISO1430_FAST_LIVE_DATA_HEADER[4] = {0xC2, 0x33, 0xF1, 0x01};
 
-struct SpeedData
+struct DataEvent
 {
-    uint8_t speed;
+    uint16_t value;
     uint64_t time;
 };
 
@@ -42,7 +43,9 @@ private:
     AltSoftSerial _serial;
     KLineState _state = disconnected;
     bool _connected;
-    SpeedData _speedData = SpeedData();
+    uint8_t _countConnectionTimeout = 0;
+    DataEvent _speedData = {};
+    DataEvent _rpmData = {};
     uint64_t _nextHandle = 0;
 
     byte _wBuff[8];
@@ -56,6 +59,7 @@ private:
     void _init();
     void _disconnect();
     void _handleInitializing();
+    void _handleIdle();
     void _handleWriting();
     void _handleReading();
     void _handleStartCommunicationResponse();
@@ -65,6 +69,7 @@ private:
     void _calculateChecksum();
     void _processReadMessage();
     void _requestSpeed();
+    void _requestRpm();
     void _dump(const byte data[], uint8_t length);
     bool _isSame(const byte b1[], const byte b2[], uint8_t length);
 
@@ -72,8 +77,11 @@ public:
     KLineController();
     bool setup();
     void onLoop();
-    SpeedData getSpeed();
+    DataEvent getSpeed();
+    DataEvent getRpm();
     bool isConnected();
+    void clearRpm();
+    uint8_t getCountConnectionTimeout();
 };
 
 #endif

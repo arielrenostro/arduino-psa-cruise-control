@@ -14,7 +14,7 @@ bool Button::setup()
     return true;
 }
 
-ButtonPressEvent Button::onLoop()
+void Button::onLoop(ButtonPressEvent *evt)
 {
     if (_pushed) // already pushed on last loop
     {
@@ -27,7 +27,9 @@ ButtonPressEvent Button::onLoop()
                 if (_calcAux >= BUTTON_HOLD_REPEAT_DELAY)
                 {
                     _pushTime = millis();
-                    return holding;
+                    evt->buttonIdx = 0;
+                    evt->type = holding;
+                    return;
                 }
             }
             else
@@ -36,10 +38,14 @@ ButtonPressEvent Button::onLoop()
                 {
                     _pushTime = millis();
                     _holding = true;
-                    return holding;
+                    evt->buttonIdx = 0;
+                    evt->type = holding;
+                    return;
                 }
             }
-            return nothing;
+            evt->buttonIdx = 0;
+            evt->type = nothing;
+            return;
         }
         else // button released
         {
@@ -47,7 +53,9 @@ ButtonPressEvent Button::onLoop()
             {
                 _pushTime = millis();
                 _pushed = false;
-                return push;
+                evt->buttonIdx = 0;
+                evt->type = push;
+                return;
             }
             _holding = false;
             _pushed = false;
@@ -57,7 +65,9 @@ ButtonPressEvent Button::onLoop()
     {
         if (millis() - _pushTime < 200) // prevent ghost click
         {
-            return nothing;
+            evt->buttonIdx = 0;
+            evt->type = nothing;
+            return;
         }
 
         if (_isPressed())
@@ -67,7 +77,9 @@ ButtonPressEvent Button::onLoop()
         }
     }
 
-    return nothing;
+    evt->buttonIdx = 0;
+    evt->type = nothing;
+    return;
 }
 
 bool Button::_isPressed()

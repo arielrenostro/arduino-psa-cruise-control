@@ -21,6 +21,19 @@ enum CruiseMode
     cruise,
 };
 
+enum SpeedDataMode
+{
+    byRPM,
+    bySpeed,
+};
+
+struct SpeedData
+{
+    double speed;
+    SpeedDataMode mode;
+    uint64_t time;
+};
+
 class CruiseController
 {
 private:
@@ -34,7 +47,7 @@ private:
     bool _temporaryDisabled = false;
     unsigned long _removeTempDisabledTime = 0;
 
-    SpeedData _actualSpeed = SpeedData();
+    SpeedData _speedData = {};
     uint8_t _desiredSpeed = 0;
 
     PID *_pid;

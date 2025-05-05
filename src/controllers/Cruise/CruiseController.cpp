@@ -1,4 +1,5 @@
 #include "CruiseController.h"
+#include "../../utils/speedCalculator.h"
 
 CruiseController::CruiseController(ThrottleController *throttleController, BuzzerController *buzzerController, KLineController *klineController)
 {
@@ -25,7 +26,7 @@ void CruiseController::onLoop()
 
     _readSpeed();
 
-    if (millis() - _actualSpeed.time > TIME_UNTIL_DISABLE_BY_SLOW_K_LINE_RESPONSE || !_klineController->isConnected())
+    if (millis() - _speedData.time > TIME_UNTIL_DISABLE_BY_SLOW_K_LINE_RESPONSE || !_klineController->isConnected())
     {
         _buzzerController->fire(klineSlow);
         disable();
@@ -48,7 +49,7 @@ void CruiseController::onLoop()
     }
 
     // handle the overspeed buzzer
-    if (_actualSpeed.speed > _desiredSpeed && _actualSpeed.speed - _desiredSpeed > OVERSPEED_TO_BUZZER)
+    if (_speedData.speed > _desiredSpeed && _speedData.speed - _desiredSpeed > OVERSPEED_TO_BUZZER)
     {
         _buzzerController->fire(overspeed);
     }
@@ -119,7 +120,7 @@ void CruiseController::_onLimitLoop()
     {
         _replayThrottle();
 
-        if (_actualSpeed.speed <= _desiredSpeed)
+        if (_speedData.speed <= _desiredSpeed)
         {
             if (_removeTempDisabledTime == 0)
             {
@@ -141,7 +142,7 @@ void CruiseController::_onLimitLoop()
         return;
     }
 
-    if (_actualSpeed.speed >= _desiredSpeed) // overspeed
+    if (_speedData.speed >= _desiredSpeed) // overspeed
     {
         uint16_t rposition = _throttleController->readPosition();
         uint16_t wposition = _throttleController->getWrotePosition();
@@ -179,6 +180,24 @@ void CruiseController::_replayThrottle()
 
 void CruiseController::_readSpeed()
 {
-    _actualSpeed = _klineController->getSpeed();
-    _pidInput = _actualSpeed.speed;
+    DataEvent rpm = _klineController->getRpm();
+    DataEvent speed = _klineController->getSpeed();
+
+    if (
+        rpm.time > 0              // exists RPM
+        && rpm.time > speed.time // RPM is most recent metric
+    )
+    {
+        _speedData.mode = byRPM;
+        _speedData.speed = calculateSpeedFromRPM(speed.value, rpm.value);
+        _speedData.time = rpm.time;
+    }
+    else
+    {
+        _speedData.mode = bySpeed;
+        _speedData.speed = speed.value;
+        _speedData.time = speed.time;
+    }
+
+    _pidInput = _speedData.speed;
 }
